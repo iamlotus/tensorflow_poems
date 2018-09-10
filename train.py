@@ -28,6 +28,8 @@ tf.app.flags.DEFINE_string('model_dir', os.path.abspath('./model'), 'model save 
 tf.app.flags.DEFINE_string('file_path', os.path.abspath('./data/poems.txt'), 'file name of poems.')
 tf.app.flags.DEFINE_string('model_prefix', 'poems', 'model save prefix.')
 tf.app.flags.DEFINE_integer('epochs', 50, 'train how many epochs.')
+tf.app.flags.DEFINE_string('cuda_visible_devices', '2', '''[Train] visible GPU ''')
+
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -84,4 +86,5 @@ def main(_):
 
 
 if __name__ == '__main__':
+    os.environ['CUDA_VISIBLE_DEVICES'] = FLAGS.cuda_visible_devices  # set GPU visibility in multiple-GPU environment
     tf.app.run()
