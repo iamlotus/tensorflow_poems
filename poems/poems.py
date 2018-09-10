@@ -26,10 +26,14 @@ end_token = 'E'
 
 
 def process_poems(file_name):
+
+    total_cnt=0
     # poems -> list of numbers
     poems = []
+
     with open(file_name, "r", encoding='utf-8', ) as f:
         for line in f.readlines():
+            total_cnt += 1
             try:
                 title, content = line.strip().split(':')
                 content = content.replace(' ', '')
@@ -53,6 +57,7 @@ def process_poems(file_name):
     word_int_map = dict(zip(words, range(len(words))))
     poems_vector = [list(map(lambda word: word_int_map.get(word, len(words)), poem)) for poem in poems]
 
+    print("%d poems totally, %d poems skipped, %d poems left. %d words totally"%(total_cnt,total_cnt-len(poems_vector),len(poems_vector),len(words)))
     return poems_vector, word_int_map, words
 
 
