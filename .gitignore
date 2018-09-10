@@ -3,3 +3,5 @@ model/
 .idea/
 __pycache__/
 logs/
+.trainpid
+.tensorboardpid
