@@ -19,7 +19,7 @@ tf.app.flags.DEFINE_integer('epochs', 50, 'train how many epochs.')
 tf.app.flags.DEFINE_integer('train_sequence_len', 50, 'length of train sequence')
 tf.app.flags.DEFINE_integer('print_every_steps', 100, '''save model every steps''')
 tf.app.flags.DEFINE_integer('save_every_epoch', 1, '''save model every epoch''')
-tf.app.flags.DEFINE_integer('gen_sequence_len', 100, 'length of gen sequence')
+tf.app.flags.DEFINE_integer('gen_sequence_len', 500, 'length of gen sequence')
 tf.app.flags.DEFINE_string('cuda_visible_devices', '2', '''[Train] visible GPU ''')
 
 
@@ -291,12 +291,13 @@ def run_compose():
                 word = to_word(predict, vocabularies)
 
             if FLAGS.treat_corpus_as_byte:
+                print("-" * 100)
                 sys.stdout.buffer.write(bytes(output))
                 sys.stdout.buffer.write(b'\n')
                 sys.stdout.flush()
-
-                # print("="*100)
-                # print(output,end='\n',flush=True)
+                print("="*100)
+                print(output,end='\n',flush=True)
+                print("-" * 100)
 
             else:
                 print("".join(output),end='\n',flush=True)
