@@ -23,7 +23,7 @@ import numpy as np
 import os
 
 tf.app.flags.DEFINE_string('input_name', 'small_poems', 'name of data(.txt)/model dir/model prefix')
-tf.app.flags.DEFINE_integer('gen_sequence_len', 50, 'length of gen sequence')
+tf.app.flags.DEFINE_integer('gen_sequence_len', 500, 'length of gen sequence')
 tf.app.flags.DEFINE_string('cuda_visible_devices', '1', '''[Train] visible GPU ''')
 
 FLAGS=tf.app.flags.FLAGS
@@ -76,16 +76,14 @@ def gen_poem():
             if begin_word and begin_word in vocabularies:
                 word = begin_word
             else:
-                print('begin word not in vocabularies, use random')
+                print('begin word not in vocabularies, use random:')
                 word = to_word(predict, vocabularies)
             poem_ = ''
 
             i = 0
-            while word != end_token:
+            while i < FLAGS.gen_sequence_len:
                 poem_ += word
                 i += 1
-                if i >= 24:
-                    break
                 x = np.zeros((1, 1))
                 x[0, 0] = word_int_map[word]
                 [predict, last_state] = sess.run([end_points['prediction'], end_points['last_state']],
