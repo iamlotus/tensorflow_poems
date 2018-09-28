@@ -26,6 +26,7 @@ tf.app.flags.DEFINE_integer('batch_size', 64, 'batch size.')
 tf.app.flags.DEFINE_float('learning_rate', 0.01, 'learning rate.')
 tf.app.flags.DEFINE_string('input_name', 'small_poems', 'name of data(.txt)/model dir/model prefix')
 tf.app.flags.DEFINE_integer('epochs', 50, 'train how many epochs.')
+tf.app.flags.DEFINE_integer('print_every_steps', 100, '''save model every steps''')
 tf.app.flags.DEFINE_integer('save_every_epoch', 1, '''save model every epoch''')
 tf.app.flags.DEFINE_string('cuda_visible_devices', '2', '''[Train] visible GPU ''')
 
@@ -60,27 +61,38 @@ def run_training():
         checkpoint = tf.train.latest_checkpoint(model_dir)
         if checkpoint:
             saver.restore(sess, checkpoint)
-            print("## restore from the checkpoint {0}".format(checkpoint))
+            print("## restore from the checkpoint {0}".format(checkpoint),flush=True)
             start_epoch += int(checkpoint.split('-')[-1])
-        print('## start training...')
+        print('## start training...',flush=True)
+
+        n_chunk = len(poems_vector) // FLAGS.batch_size
+        step = start_epoch*n_chunk
         try:
             for epoch in range(start_epoch, FLAGS.epochs):
                 n = 0
-                n_chunk = len(poems_vector) // FLAGS.batch_size
+
                 for batch in range(n_chunk):
-                    loss, _, _ = sess.run([
-                        end_points['total_loss'],
-                        end_points['last_state'],
-                        end_points['train_op']
-                    ], feed_dict={input_data: batches_inputs[n], output_targets: batches_outputs[n]})
+                    if step % FLAGS.print_every_steps==0:
+                        loss, _, _ = sess.run([
+                            end_points['total_loss'],
+                            end_points['last_state'],
+                            end_points['train_op']
+                        ], feed_dict={input_data: batches_inputs[n], output_targets: batches_outputs[n]})
+                        print('Epoch: %d, batch: %d, training loss: %.6f' % (epoch, batch, loss), flush=True)
+                    else:
+                         _, _ = sess.run([
+                            end_points['last_state'],
+                            end_points['train_op']
+                        ], feed_dict={input_data: batches_inputs[n], output_targets: batches_outputs[n]})
                     n += 1
-                    print('Epoch: %d, batch: %d, training loss: %.6f' % (epoch, batch, loss))
+                    step += 1
                 if epoch % FLAGS.save_every_epoch == 0:
                     saver.save(sess, model_file, global_step=epoch)
+                    print("saving checkpoint for epoch {}".format(epoch),flush=True)
         except KeyboardInterrupt:
             print('## Interrupt manually, try saving checkpoint for now...')
             saver.save(sess, model_file, global_step=epoch)
-            print('## Last epoch were saved, next time will start from epoch {}.'.format(epoch))
+            print('## Last epoch were saved, next time will start from epoch {}.'.format(epoch), flush=True)
 
 
 def main(_):
