@@ -28,9 +28,6 @@ tf.app.flags.DEFINE_string('cuda_visible_devices', '1', '''[Train] visible GPU '
 
 FLAGS=tf.app.flags.FLAGS
 
-
-start_token = 'B'
-end_token = 'E'
 model_dir = os.path.join('model',FLAGS.input_name)
 corpus_path = os.path.join('data', FLAGS.input_name + '.txt')
 
@@ -67,19 +64,27 @@ def gen_poem():
         saver.restore(sess, checkpoint)
 
         while True:
-            x = np.array([list(map(word_int_map.get, start_token))])
 
-            [predict, last_state] = sess.run([end_points['prediction'], end_points['last_state']],
-                                             feed_dict={input_data: x})
+            # start_token=vocabularies[np.random.randint(len(vocabularies))]
+            # x = np.array([list(map(word_int_map.get, start_token))])
+            # [predict, last_state] = sess.run([end_points['prediction'], end_points['last_state']],
+            #                                  feed_dict={input_data: x})
             begin_word = input('## please input the first character:')
             if begin_word and begin_word in vocabularies:
                 word = begin_word
             else:
-                print('## begin word not in vocabularies, use random:')
-                word = to_word(predict, vocabularies)
-            poem_ = ''
+                word = vocabularies[np.random.randint(len(vocabularies))]
+                print('## begin word not in vocabularies, use random begin word:'+word)
 
-            i = 0
+            poem_=word
+
+            x = np.array([list(map(word_int_map.get, word))])
+            [predict, last_state] = sess.run([end_points['prediction'], end_points['last_state']],
+                                             feed_dict={input_data: x})
+            # second word
+            word = to_word(predict, vocabularies)
+
+            i = 1
             while i < FLAGS.gen_sequence_len:
                 poem_ += word
                 i += 1
