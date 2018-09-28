@@ -49,6 +49,10 @@ def run_training():
     poems_vector, word_to_int, vocabularies = process_poems(corpus_path)
     batches_inputs, batches_outputs = generate_batch(FLAGS.batch_size, poems_vector, word_to_int)
 
+    print("## top ten words: %s"%list(word_to_int.items())[:10])
+    print("## len(first vector)=%d, first vector[:50]: %s"% (len(poems_vector[0]),poems_vector[0][:50]))
+    print("## len(second vector)=%d, second vector[:50]: %s" % (len(poems_vector[1]), poems_vector[1][:50]))
+
     input_data = tf.placeholder(tf.int32, [FLAGS.batch_size, None])
     output_targets = tf.placeholder(tf.int32, [FLAGS.batch_size, None])
 
