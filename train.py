@@ -17,12 +17,14 @@
 # limitations under the License.
 # ------------------------------------------------------------------------
 import os
-import numpy as np
 import tensorflow as tf
-from poems.model import rnn_model
-from poems.poems import process_poems, generate_batch
+import rnn
+from corpus import process_corpus, generate_batch
 import time
+import operator
 
+tf.app.flags.DEFINE_integer('rnn_size', 128, 'rnn size.')
+tf.app.flags.DEFINE_integer('num_layers', 2, 'layer num.')
 tf.app.flags.DEFINE_integer('batch_size', 64, 'batch size.')
 tf.app.flags.DEFINE_float('learning_rate', 0.01, 'learning rate.')
 tf.app.flags.DEFINE_string('input_name', 'small_poems', 'name of data(.txt)/model dir/model prefix')
@@ -47,7 +49,7 @@ def run_training():
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
 
-    poems_vector, word_to_int, vocabularies = process_poems(corpus_path)
+    poems_vector, word_to_int, vocabularies = process_corpus(corpus_path)
     batches_inputs, batches_outputs = generate_batch(poems_vector,FLAGS.batch_size, FLAGS.train_sequence_len)
 
     print("## top ten vocabularies: %s" % str(vocabularies[:10]))
@@ -58,7 +60,7 @@ def run_training():
     input_data = tf.placeholder(tf.int32, [FLAGS.batch_size, None])
     output_targets = tf.placeholder(tf.int32, [FLAGS.batch_size, None])
 
-    end_points = rnn_model(model='lstm', input_data=input_data, output_data=output_targets, vocab_size=len(
+    end_points = rnn.rnn_model(model='lstm', input_data=input_data, output_data=output_targets, vocab_size=len(
         vocabularies), rnn_size=128, num_layers=2, batch_size=FLAGS.batch_size, learning_rate=FLAGS.learning_rate)
 
     saver = tf.train.Saver(tf.global_variables())
@@ -111,7 +113,21 @@ def run_training():
             print('## Last epoch were saved, next time will start from epoch {}.'.format(epoch), flush=True)
 
 
+def print_args():
+    print('=' * 100)
+    print('[FLAGS]')
+    for k, v in sorted(FLAGS.flag_values_dict().items(), key=operator.itemgetter(0)):
+        if k in ['h', 'help', 'helpfull', 'helpshort']:
+            continue
+
+        if isinstance(v, str):
+            print('%s = "%s"' % (k, v))
+        else:
+            print('%s = %s' % (k, v))
+    print('=' * 100, flush=True)
+
 def main(_):
+    print_args()
     run_training()
 
 

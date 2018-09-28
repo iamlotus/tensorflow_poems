@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# file: poems.py
+# file: corpus.py
 # author: JinTian
 # time: 08/03/2017 7:39 PM
 # Copyright 2017 JinTian. All Rights Reserved.
@@ -20,8 +20,7 @@ import collections
 import numpy as np
 
 
-def process_poems(file_name):
-
+def process_corpus(file_name):
 
     # contents -> list of word
     contents = []
@@ -46,9 +45,6 @@ def process_poems(file_name):
 
 
 def generate_batch(content_vector, batch_size,seq_len):
-
-
-    # flatten poem_vec
 
     x=np.copy(content_vector)
     y=np.zeros(x.shape,dtype=x.dtype)

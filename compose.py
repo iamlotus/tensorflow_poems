@@ -17,10 +17,11 @@
 # limitations under the License.
 # ------------------------------------------------------------------------
 import tensorflow as tf
-from poems.model import rnn_model
-from poems.poems import process_poems
+from corpus import process_corpus
 import numpy as np
 import os
+import operator
+import rnn
 
 tf.app.flags.DEFINE_string('input_name', 'small_poems', 'name of data(.txt)/model dir/model prefix')
 tf.app.flags.DEFINE_integer('gen_sequence_len', 500, 'length of gen sequence')
@@ -47,11 +48,11 @@ def to_word(predict, vocabs):
 def gen_poem():
     batch_size = 1
 
-    poems_vector, word_int_map, vocabularies = process_poems(corpus_path)
+    poems_vector, word_int_map, vocabularies = process_corpus(corpus_path)
 
     input_data = tf.placeholder(tf.int32, [batch_size, None])
 
-    end_points = rnn_model(model='lstm', input_data=input_data, output_data=None, vocab_size=len(
+    end_points = rnn.rnn_model(model='lstm', input_data=input_data, output_data=None, vocab_size=len(
         vocabularies), rnn_size=128, num_layers=2, batch_size=64, learning_rate=lr)
 
     saver = tf.train.Saver(tf.global_variables())
@@ -96,6 +97,21 @@ def gen_poem():
 
             print(poem_,flush=True)
 
+
+def print_args():
+    print('=' * 100)
+    print('[FLAGS]')
+    for k, v in sorted(FLAGS.flag_values_dict().items(), key=operator.itemgetter(0)):
+        if k in ['h', 'help', 'helpfull', 'helpshort']:
+            continue
+
+        if isinstance(v, str):
+            print('%s = "%s"' % (k, v))
+        else:
+            print('%s = %s' % (k, v))
+    print('=' * 100, flush=True)
+
 if __name__ == '__main__':
+    print_args()
     os.environ['CUDA_VISIBLE_DEVICES'] = FLAGS.cuda_visible_devices  # set GPU visibility in multiple-GPU environment
     gen_poem()
