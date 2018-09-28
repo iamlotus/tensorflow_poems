@@ -291,14 +291,9 @@ def run_compose():
                 word = to_word(predict, vocabularies)
 
             if FLAGS.treat_corpus_as_byte:
-                print("-" * 100)
                 sys.stdout.buffer.write(bytes(output))
                 sys.stdout.buffer.write(b'\n')
                 sys.stdout.flush()
-                print("="*100)
-                print(output,end='\n',flush=True)
-                print("-" * 100)
-
             else:
                 print("".join(output),end='\n',flush=True)
 
