@@ -51,10 +51,11 @@ def rnn_model(model, input_data, output_data, vocab_size, rnn_size=128, num_laye
     else:
         initial_state = cell.zero_state(1, tf.float32)
 
-    with tf.device("/cpu:0"):
+    with tf.device("/cpu:0"),tf.name_scope("hidden"):
         embedding = tf.get_variable('embedding', initializer=tf.random_uniform(
             [vocab_size + 1, rnn_size], -1.0, 1.0))
         inputs = tf.nn.embedding_lookup(embedding, input_data)
+        tf.summary.histogram("embedding", embedding)
 
     # [batch_size, ?, rnn_size] = [64, ?, 128]
     outputs, last_state = tf.nn.dynamic_rnn(cell, inputs, initial_state=initial_state)
@@ -73,6 +74,9 @@ def rnn_model(model, input_data, output_data, vocab_size, rnn_size=128, num_laye
         loss = tf.nn.softmax_cross_entropy_with_logits(labels=labels, logits=logits)
         # loss shape should be [?, vocab_size+1]
         total_loss = tf.reduce_mean(loss)
+
+        tf.summary.scalar('total_loss', total_loss)
+        tf.summary.scalar('learning_rate', learning_rate)
         train_op = tf.train.AdamOptimizer(learning_rate).minimize(total_loss)
 
         end_points['initial_state'] = initial_state

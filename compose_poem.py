@@ -76,7 +76,7 @@ def gen_poem():
             if begin_word and begin_word in vocabularies:
                 word = begin_word
             else:
-                print('begin word not in vocabularies, use random:')
+                print('## begin word not in vocabularies, use random:')
                 word = to_word(predict, vocabularies)
             poem_ = ''
 

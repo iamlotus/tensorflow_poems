@@ -34,6 +34,7 @@ tf.app.flags.DEFINE_string('cuda_visible_devices', '2', '''[Train] visible GPU '
 FLAGS = tf.app.flags.FLAGS
 
 model_dir=os.path.join('model',FLAGS.input_name)
+log_dir=os.path.join('logs',FLAGS.input_name)
 model_file=os.path.join(model_dir,FLAGS.input_name)
 corpus_path=os.path.join('data', FLAGS.input_name + ".txt")
 
@@ -42,6 +43,12 @@ def run_training():
 
     if not os.path.exists(model_dir):
         os.makedirs(model_dir)
+
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+
+
+
 
     poems_vector, word_to_int, vocabularies = process_poems(corpus_path)
     batches_inputs, batches_outputs = generate_batch(FLAGS.batch_size, poems_vector, word_to_int)
@@ -54,7 +61,11 @@ def run_training():
 
     saver = tf.train.Saver(tf.global_variables())
     init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
+    summary_op=tf.summary.merge_all()
     with tf.Session() as sess:
+
+        train_writer = tf.summary.FileWriter(os.path.join(log_dir, "train"), sess.graph)
+
         sess.run(init_op)
 
         start_epoch = 0
@@ -73,11 +84,13 @@ def run_training():
 
                 for batch in range(n_chunk):
                     if step % FLAGS.print_every_steps==0:
-                        loss, _, _ = sess.run([
+                        loss, _, _,train_summary = sess.run([
                             end_points['total_loss'],
                             end_points['last_state'],
-                            end_points['train_op']
+                            end_points['train_op'],
+                            summary_op
                         ], feed_dict={input_data: batches_inputs[n], output_targets: batches_outputs[n]})
+                        train_writer.add_summary(train_summary,global_step=step)
                         print('Epoch: %d, batch: %d, training loss: %.6f' % (epoch, batch, loss), flush=True)
                     else:
                          _, _ = sess.run([
