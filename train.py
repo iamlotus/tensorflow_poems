@@ -74,16 +74,17 @@ def run_training():
         if checkpoint:
             saver.restore(sess, checkpoint)
             print("## restore from the checkpoint {0}".format(checkpoint),flush=True)
-            start_epoch += int(checkpoint.split('-')[-1])
+            start_epoch += int(checkpoint.split('-')[-1])+1
         print('## start training...',flush=True)
 
         n_chunk = len(poems_vector) // FLAGS.batch_size
-        step = start_epoch*n_chunk
+
         try:
             for epoch in range(start_epoch, FLAGS.epochs):
                 n = 0
 
                 for batch in range(n_chunk):
+                    step = epoch * n_chunk+batch
                     if step % FLAGS.print_every_steps==0:
                         loss, _, _,train_summary = sess.run([
                             end_points['total_loss'],
