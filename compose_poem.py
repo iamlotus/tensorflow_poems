@@ -49,7 +49,7 @@ def to_word(predict, vocabs):
 
 def gen_poem():
     batch_size = 1
-    print('## loading corpus from %s' % model_dir)
+
     poems_vector, word_int_map, vocabularies = process_poems(corpus_path)
 
     input_data = tf.placeholder(tf.int32, [batch_size, None])
@@ -63,9 +63,8 @@ def gen_poem():
         sess.run(init_op)
 
         checkpoint = tf.train.latest_checkpoint(model_dir)
+        print('## loading corpus from %s' % checkpoint)
         saver.restore(sess, checkpoint)
-
-
 
         while True:
             x = np.array([list(map(word_int_map.get, start_token))])
@@ -91,10 +90,6 @@ def gen_poem():
                 word = to_word(predict, vocabularies)
 
             print(poem_,flush=True)
-
-
-
-
 
 if __name__ == '__main__':
     os.environ['CUDA_VISIBLE_DEVICES'] = FLAGS.cuda_visible_devices  # set GPU visibility in multiple-GPU environment
