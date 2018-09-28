@@ -1,11 +1,11 @@
 #!/bin/sh
 
-if [ -f ".sptrainpid" ]; then
-    if [ -d /proc/`cat .sptrainpid` ]; then
-      echo stop `cat .sptrainpid` && kill `cat .sptrainpid` && rm .sptrainpid
+if [ -f ".shakespearepid" ]; then
+    if [ -d /proc/`cat .shakespearepid` ]; then
+      echo stop `cat .shakespearepid` && kill `cat .shakespearepid` && rm .shakespearepid
   else
-     echo remove dead pid `cat .sptrainpid` && rm .sptrainpid
+     echo remove dead pid `cat .shakespearepid` && rm .shakespearepid
   fi
 else
-    echo nothing to stop, can not find .sptrainpid file
+    echo nothing to stop, can not find .shakespearepid file
 fi

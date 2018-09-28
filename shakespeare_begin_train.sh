@@ -1,19 +1,19 @@
 #!/bin/sh
 
 # multiple command in one line
-if [ -f ".sptrainpid" ]; then
-    if [ -d /proc/`cat .sptrainpid` ]; then
-        echo found running pid `cat .sptrainpid`
+if [ -f ".shakespearepid" ]; then
+    if [ -d /proc/`cat .shakespearepid` ]; then
+        echo found running pid `cat .shakespearepid`
     else
-        rm .sptrainpid \
-        && echo [remove dead pid `cat .sptrainpid`] \
-        && nohup python3 train.py --cuda_visible_devices=0 --input_name=shakespeare --learning_rate=0.001 --epochs=1000 >logs/sptrain.out 2>&1 & echo $! > .sptrainpid \
+        rm .shakespearepid \
+        && echo [remove dead pid `cat .shakespearepid`] \
+        && nohup python3 train.py --cuda_visible_devices=0 --input_name=shakespeare --learning_rate=0.001 --epochs=1000 >logs/shakespeare.out 2>&1 & echo $! > .shakespearepid \
         && echo [train started] \
-        && busybox tail -f logs/sptrain.out
+        && busybox tail -f logs/shakespeare.out
     fi
 else
-    nohup python3 train.py --cuda_visible_devices=0 --input_name=shakespeare --learning_rate=0.001 --epochs=1000 >logs/sptrain.out 2>&1 & echo $! > .sptrainpid \
+    nohup python3 train.py --cuda_visible_devices=0 --input_name=shakespeare --learning_rate=0.001 --epochs=1000 >logs/shakespeare.out 2>&1 & echo $! > .shakespearepid \
     && echo [train started] \
-    && busybox tail -f logs/sptrain.out
+    && busybox tail -f logs/shakespeare.out
 fi
 

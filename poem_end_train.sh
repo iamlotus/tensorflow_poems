@@ -1,11 +1,11 @@
 #!/bin/sh
 
-if [ -f ".trainpid" ]; then
-    if [ -d /proc/`cat .trainpid` ]; then
-      echo stop `cat .trainpid` && kill `cat .trainpid` && rm .trainpid
+if [ -f ".poemspid" ]; then
+    if [ -d /proc/`cat .poemspid` ]; then
+      echo stop `cat .poemspid` && kill `cat .poemspid` && rm .poemspid
   else
-     echo remove dead pid `cat .trainpid` && rm .trainpid
+     echo remove dead pid `cat .poemspid` && rm .poemspid
   fi
 else
-    echo nothing to stop, can not find .trainpid file
+    echo nothing to stop, can not find .poemspid file
 fi

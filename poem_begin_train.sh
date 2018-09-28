@@ -1,20 +1,20 @@
 #!/bin/sh
 
 # multiple command in one line
-if [ -f ".trainpid" ]; then
-    if [ -d /proc/`cat .trainpid` ]; then
-        echo found running pid `cat .trainpid`
+if [ -f ".poemspid" ]; then
+    if [ -d /proc/`cat .poemspid` ]; then
+        echo found running pid `cat .poemspid`
     else
-        rm .trainpid \
-        && echo [remove dead pid `cat .trainpid`] \
-        && nohup python3 train.py --cuda_visible_devices=2 --learning_rate=0.001 --epochs=1000 --input_name=poems >logs/train.out 2>&1 & echo $! > .trainpid \
+        rm .poemspid \
+        && echo [remove dead pid `cat .poemspid`] \
+        && nohup python3 train.py --cuda_visible_devices=2 --learning_rate=0.001 --epochs=1000 --input_name=poems >logs/poems.out 2>&1 & echo $! > .poemspid \
         && echo [train started] \
-        && busybox tail -f logs/train.out
+        && busybox tail -f logs/poems.out
     fi
 else
-    nohup python3 train.py --cuda_visible_devices=2 --learning_rate=0.001 --epochs=1000 --input_name=poems >logs/train.out 2>&1 & echo $! > .trainpid \
+    nohup python3 train.py --cuda_visible_devices=2 --learning_rate=0.001 --epochs=1000 --input_name=poems >logs/poems.out 2>&1 & echo $! > .poemspid \
     && echo [train started] \
-    && busybox tail -f logs/train.out
+    && busybox tail -f logs/poems.out
 fi
 
 
