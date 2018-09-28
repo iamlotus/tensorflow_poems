@@ -3,9 +3,8 @@ if [ -f ".tensorboardpid" ]; then
     if [ -d /proc/`cat .tensorboardpid` ]; then
         echo [kill live pid `cat .tensorboardpid`] \
         && kill `cat .tensorboardpid`
-
     else
-        echo [remove dead pid `cat .tensorboard`] \
+        echo [remove dead pid `cat .tensorboardpid`] \
         && rm .tensorboard
     fi
 fi
