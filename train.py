@@ -27,6 +27,7 @@ tf.app.flags.DEFINE_integer('batch_size', 64, 'batch size.')
 tf.app.flags.DEFINE_float('learning_rate', 0.01, 'learning rate.')
 tf.app.flags.DEFINE_string('input_name', 'small_poems', 'name of data(.txt)/model dir/model prefix')
 tf.app.flags.DEFINE_integer('epochs', 50, 'train how many epochs.')
+tf.app.flags.DEFINE_integer('train_sequence_len', 50, 'length of train sequence')
 tf.app.flags.DEFINE_integer('print_every_steps', 100, '''save model every steps''')
 tf.app.flags.DEFINE_integer('save_every_epoch', 1, '''save model every epoch''')
 tf.app.flags.DEFINE_string('cuda_visible_devices', '2', '''[Train] visible GPU ''')
@@ -47,12 +48,10 @@ def run_training():
         os.makedirs(log_dir)
 
     poems_vector, word_to_int, vocabularies = process_poems(corpus_path)
-    batches_inputs, batches_outputs = generate_batch(FLAGS.batch_size, poems_vector, word_to_int)
+    batches_inputs, batches_outputs = generate_batch(poems_vector,FLAGS.batch_size, FLAGS.train_sequence_len)
 
     print("## top ten vocabularies: %s" % str(vocabularies[:10]))
     print("## tail ten vocabularies: %s" % str(vocabularies[-10:]))
-    print("## len(first vector)=%d, first vector[:50]: %s"% (len(poems_vector[0]),poems_vector[0][:50]))
-    print("## len(last vector)=%d, second vector[:50]: %s" % (len(poems_vector[-1]), poems_vector[-1][:50]))
 
     input_data = tf.placeholder(tf.int32, [FLAGS.batch_size, None])
     output_targets = tf.placeholder(tf.int32, [FLAGS.batch_size, None])

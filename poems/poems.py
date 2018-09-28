@@ -19,62 +19,51 @@
 import collections
 import numpy as np
 
-start_token = 'B'
-end_token = 'E'
-
 
 def process_poems(file_name):
 
-    total_cnt=0
-    # poems -> list of numbers
-    poems = []
 
-    with open(file_name, "r", encoding='utf-8', ) as f:
-        for line in f.readlines():
-            total_cnt += 1
-            try:
-                title, content = line.strip().split(':')
-                content = content.replace(' ', '')
-                if '_' in content or '(' in content or '（' in content or '《' in content or '[' in content or \
-                        start_token in content or end_token in content:
-                    continue
-                if len(content) < 5 or len(content) > 79:
-                    continue
-                content = start_token + content + end_token
-                poems.append(content)
-            except ValueError as e:
-                pass
-    # poems = sorted(poems, key=len)
+    # contents -> list of word
+    contents = []
 
-    all_words = [word for poem in poems for word in poem]
-    counter = collections.Counter(all_words)
+    buffer_size=1000
+    with open(file_name, "r", encoding='utf-8') as f:
+        content=f.read(buffer_size)
+        while content :
+            contents+=content
+            content = f.read(buffer_size)
+
+    counter = collections.Counter(contents)
     # sort by value then key, to guarantee count_pairs is stable
     count_pairs = sorted(counter.items(), key=lambda kv: (kv[1],kv[0]), reverse=True)
     words, _ = zip(*count_pairs)
 
-    words = words + (' ',)
     word_int_map = dict(zip(words, range(len(words))))
-    poems_vector = [list(map(lambda word: word_int_map.get(word, len(words)), poem)) for poem in poems]
+    contents_vector = list(map(word_int_map.get,contents))
 
-    print("%d poems totally, %d poems skipped, %d poems left. %d words totally"%(total_cnt,total_cnt-len(poems_vector),len(poems_vector),len(words)))
-    return poems_vector, word_int_map, words
+    print("content size = %d , %d words totally"%(len(contents_vector),len(word_int_map)))
+    return contents_vector, word_int_map, words
 
 
-def generate_batch(batch_size, poems_vec, word_to_int):
-    n_chunk = len(poems_vec) // batch_size
+def generate_batch(content_vector, batch_size,seq_len):
+
+
+    # flatten poem_vec
+
+    x=np.copy(content_vector)
+    y=np.zeros(x.shape,dtype=x.dtype)
+    y[:-1]=x[1:]
+    y[-1]=x[0]
+
+    n_chunk = len(content_vector) // (batch_size*seq_len)
     x_batches = []
     y_batches = []
     for i in range(n_chunk):
-        start_index = i * batch_size
-        end_index = start_index + batch_size
+        start_index = i * batch_size*seq_len
+        end_index = start_index + batch_size*seq_len
+        x_data= x[start_index:end_index].reshape(batch_size,seq_len)
+        y_data = y[start_index:end_index].reshape(batch_size, seq_len)
 
-        batches = poems_vec[start_index:end_index]
-        length = max(map(len, batches))
-        x_data = np.full((batch_size, length), word_to_int[' '], np.int32)
-        for row, batch in enumerate(batches):
-            x_data[row, :len(batch)] = batch
-        y_data = np.copy(x_data)
-        y_data[:, :-1] = x_data[:, 1:]
         """
         x_data             y_data
         [6,2,4,6,9]       [2,4,6,9,9]
