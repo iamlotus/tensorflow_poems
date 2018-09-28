@@ -268,17 +268,6 @@ def run_compose():
 
         while True:
 
-            # start_token=vocabularies[np.random.randint(len(vocabularies))]
-            # x = np.array([list(map(word_int_map.get, start_token))])
-            # [predict, last_state] = sess.run([end_points['prediction'], end_points['last_state']],
-            #                                  feed_dict={input_data: x})
-            # begin_word = input('## please input the first character:')
-            # if begin_word and begin_word in vocabularies:
-            #     word = begin_word
-            # else:
-            #     word = vocabularies[np.random.randint(len(vocabularies))]
-            #     print('## begin word not in vocabularies, use random begin word "%s": '%word)
-
             input('## print any key to compose new sentence')
 
             # pick first word randomly
@@ -306,8 +295,8 @@ def run_compose():
                 sys.stdout.buffer.write(b'\n')
                 sys.stdout.flush()
 
-                print("="*100)
-                print(output,end='\n',flush=True)
+                # print("="*100)
+                # print(output,end='\n',flush=True)
 
             else:
                 print("".join(output),end='\n',flush=True)
