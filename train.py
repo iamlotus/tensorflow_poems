@@ -21,6 +21,7 @@ import numpy as np
 import tensorflow as tf
 from poems.model import rnn_model
 from poems.poems import process_poems, generate_batch
+import time
 
 tf.app.flags.DEFINE_integer('batch_size', 64, 'batch size.')
 tf.app.flags.DEFINE_float('learning_rate', 0.01, 'learning rate.')
@@ -39,16 +40,11 @@ model_file=os.path.join(model_dir,FLAGS.input_name)
 corpus_path=os.path.join('data', FLAGS.input_name + ".txt")
 
 def run_training():
-
-
     if not os.path.exists(model_dir):
         os.makedirs(model_dir)
 
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
-
-
-
 
     poems_vector, word_to_int, vocabularies = process_poems(corpus_path)
     batches_inputs, batches_outputs = generate_batch(FLAGS.batch_size, poems_vector, word_to_int)
@@ -91,7 +87,7 @@ def run_training():
                             summary_op
                         ], feed_dict={input_data: batches_inputs[n], output_targets: batches_outputs[n]})
                         train_writer.add_summary(train_summary,global_step=step)
-                        print('Epoch: %d, batch: %d, training loss: %.6f' % (epoch, batch, loss), flush=True)
+                        print('[%s] Step: %d, Epoch: %d, batch: %d, training loss: %.6f' % (time.strftime('%Y-%m-%d %H:%M:%S'),step,epoch, batch, loss), flush=True)
                     else:
                          _, _ = sess.run([
                             end_points['last_state'],
@@ -101,7 +97,7 @@ def run_training():
                     step += 1
                 if epoch % FLAGS.save_every_epoch == 0:
                     saver.save(sess, model_file, global_step=epoch)
-                    print("saving checkpoint for epoch {}".format(epoch),flush=True)
+                    print("[%s] Saving checkpoint for epoch %d"%(time.strftime('%Y-%m-%d %H:%M:%S'), epoch),flush=True)
         except KeyboardInterrupt:
             print('## Interrupt manually, try saving checkpoint for now...')
             saver.save(sess, model_file, global_step=epoch)
