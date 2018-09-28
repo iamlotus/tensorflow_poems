@@ -52,6 +52,8 @@ def run_training():
 
     print("## top ten vocabularies: %s" % str(vocabularies[:10]))
     print("## tail ten vocabularies: %s" % str(vocabularies[-10:]))
+    print("## poems_vector[:10]: %s" % poems_vector[:10])
+    print("## poems_vector[-10:]: %s" % poems_vector[-10:])
 
     input_data = tf.placeholder(tf.int32, [FLAGS.batch_size, None])
     output_targets = tf.placeholder(tf.int32, [FLAGS.batch_size, None])
@@ -76,7 +78,7 @@ def run_training():
             start_epoch += int(checkpoint.split('-')[-1])+1
         print('## start training...',flush=True)
 
-        n_chunk = len(poems_vector) // FLAGS.batch_size
+        n_chunk = len(batches_inputs)
 
         try:
             for epoch in range(start_epoch, FLAGS.epochs):

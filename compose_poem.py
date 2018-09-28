@@ -23,7 +23,6 @@ import numpy as np
 import os
 
 tf.app.flags.DEFINE_string('input_name', 'small_poems', 'name of data(.txt)/model dir/model prefix')
-tf.app.flags.DEFINE_integer('train_sequence_len', 50, 'length of train sequence')
 tf.app.flags.DEFINE_integer('gen_sequence_len', 500, 'length of gen sequence')
 tf.app.flags.DEFINE_string('cuda_visible_devices', '1', '''[Train] visible GPU ''')
 
@@ -48,7 +47,7 @@ def to_word(predict, vocabs):
 def gen_poem():
     batch_size = 1
 
-    poems_vector, word_int_map, vocabularies = process_poems(corpus_path,FLAGS.train_sequence_len)
+    poems_vector, word_int_map, vocabularies = process_poems(corpus_path)
 
     input_data = tf.placeholder(tf.int32, [batch_size, None])
 
