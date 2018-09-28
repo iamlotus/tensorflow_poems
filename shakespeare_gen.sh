@@ -1,5 +1,5 @@
 #!/bin/sh
 
-python3 compose.py --input_name=shakespeare --cuda_visible_devices=3
+python3 rnn.py --mode=compose --input_name=shakespeare --cuda_visible_devices=3
 
 
