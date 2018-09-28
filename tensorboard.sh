@@ -5,7 +5,7 @@ if [ -f ".tensorboardpid" ]; then
         && kill `cat .tensorboardpid`
     else
         echo [remove dead pid `cat .tensorboardpid`] \
-        && rm .tensorboard
+        && rm .tensorboardpid
     fi
 fi
 
