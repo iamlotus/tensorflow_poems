@@ -20,11 +20,17 @@ import tensorflow as tf
 from poems.model import rnn_model
 from poems.poems import process_poems
 import numpy as np
+import os
+
+tf.app.flags.DEFINE_string('input_name', 'small_poems', 'name of data(.txt)/model dir/model prefix')
+
+FLAGS=tf.app.flags.FLAGS
+
 
 start_token = 'B'
 end_token = 'E'
-model_dir = './model/'
-corpus_file = './data/poems.txt'
+model_dir = os.path.join('model',FLAGS.input_name)
+corpus_path = os.path.join('data', FLAGS.input_name + '.txt')
 
 lr = 0.0002
 
@@ -42,7 +48,7 @@ def to_word(predict, vocabs):
 def gen_poem(begin_word):
     batch_size = 1
     print('## loading corpus from %s' % model_dir)
-    poems_vector, word_int_map, vocabularies = process_poems(corpus_file)
+    poems_vector, word_int_map, vocabularies = process_poems(corpus_path)
 
     input_data = tf.placeholder(tf.int32, [batch_size, None])
 

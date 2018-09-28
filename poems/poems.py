@@ -17,8 +17,6 @@
 # limitations under the License.
 # ------------------------------------------------------------------------
 import collections
-import os
-import sys
 import numpy as np
 
 start_token = 'B'
@@ -50,7 +48,8 @@ def process_poems(file_name):
 
     all_words = [word for poem in poems for word in poem]
     counter = collections.Counter(all_words)
-    count_pairs = sorted(counter.items(), key=lambda x: x[1], reverse=True)
+    # sort by value then key, to guarantee count_pairs is stable
+    count_pairs = sorted(counter.items(), key=lambda kv: (kv[1],kv[0]), reverse=True)
     words, _ = zip(*count_pairs)
 
     words = words + (' ',)

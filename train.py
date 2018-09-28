@@ -24,21 +24,25 @@ from poems.poems import process_poems, generate_batch
 
 tf.app.flags.DEFINE_integer('batch_size', 64, 'batch size.')
 tf.app.flags.DEFINE_float('learning_rate', 0.01, 'learning rate.')
-tf.app.flags.DEFINE_string('model_dir', os.path.abspath('./model'), 'model save path.')
-tf.app.flags.DEFINE_string('file_path', os.path.abspath('./data/poems.txt'), 'file name of poems.')
-tf.app.flags.DEFINE_string('model_prefix', 'poems', 'model save prefix.')
+tf.app.flags.DEFINE_string('input_name', 'small_poems', 'name of data(.txt)/model dir/model prefix')
 tf.app.flags.DEFINE_integer('epochs', 50, 'train how many epochs.')
+tf.app.flags.DEFINE_integer('save_every_epoch', 1, '''save model every epoch''')
 tf.app.flags.DEFINE_string('cuda_visible_devices', '2', '''[Train] visible GPU ''')
 
 
 FLAGS = tf.app.flags.FLAGS
 
+model_dir=os.path.join('model',FLAGS.input_name)
+model_file=os.path.join(model_dir,FLAGS.input_name)
+corpus_path=os.path.join('data', FLAGS.input_name + ".txt")
 
 def run_training():
-    if not os.path.exists(FLAGS.model_dir):
-        os.makedirs(FLAGS.model_dir)
 
-    poems_vector, word_to_int, vocabularies = process_poems(FLAGS.file_path)
+
+    if not os.path.exists(model_dir):
+        os.makedirs(model_dir)
+
+    poems_vector, word_to_int, vocabularies = process_poems(corpus_path)
     batches_inputs, batches_outputs = generate_batch(FLAGS.batch_size, poems_vector, word_to_int)
 
     input_data = tf.placeholder(tf.int32, [FLAGS.batch_size, None])
@@ -50,12 +54,10 @@ def run_training():
     saver = tf.train.Saver(tf.global_variables())
     init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
     with tf.Session() as sess:
-        # sess = tf_debug.LocalCLIDebugWrapperSession(sess=sess)
-        # sess.add_tensor_filter("has_inf_or_nan", tf_debug.has_inf_or_nan)
         sess.run(init_op)
 
         start_epoch = 0
-        checkpoint = tf.train.latest_checkpoint(FLAGS.model_dir)
+        checkpoint = tf.train.latest_checkpoint(model_dir)
         if checkpoint:
             saver.restore(sess, checkpoint)
             print("## restore from the checkpoint {0}".format(checkpoint))
@@ -73,11 +75,11 @@ def run_training():
                     ], feed_dict={input_data: batches_inputs[n], output_targets: batches_outputs[n]})
                     n += 1
                     print('Epoch: %d, batch: %d, training loss: %.6f' % (epoch, batch, loss))
-                if epoch % 6 == 0:
-                    saver.save(sess, os.path.join(FLAGS.model_dir, FLAGS.model_prefix), global_step=epoch)
+                if epoch % FLAGS.save_every_epoch == 0:
+                    saver.save(sess, model_file, global_step=epoch)
         except KeyboardInterrupt:
             print('## Interrupt manually, try saving checkpoint for now...')
-            saver.save(sess, os.path.join(FLAGS.model_dir, FLAGS.model_prefix), global_step=epoch)
+            saver.save(sess, model_file, global_step=epoch)
             print('## Last epoch were saved, next time will start from epoch {}.'.format(epoch))
 
 
