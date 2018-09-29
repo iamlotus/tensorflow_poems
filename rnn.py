@@ -231,9 +231,10 @@ def run_training():
         checkpoint = tf.train.latest_checkpoint(model_dir)
         if checkpoint:
             saver.restore(sess, checkpoint)
-            print("## restore from the checkpoint {0}".format(checkpoint),flush=True)
+            print('## restore from the checkpoint %s, continue training...'%checkpoint,flush=True)
             start_epoch += int(checkpoint.split('-')[-1])+1
-        print('## start training...',flush=True)
+        else:
+            print('## can not find checkpoint from "%s", restart training... '%model_dir,flush=True)
 
 
         for epoch in range(start_epoch, FLAGS.epochs):
