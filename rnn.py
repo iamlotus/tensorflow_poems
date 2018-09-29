@@ -346,6 +346,7 @@ def run_compose():
             if FLAGS.treat_corpus_as_byte:
                 sys.stdout.buffer.write(bytes(output))
                 sys.stdout.buffer.write(b'\n')
+                sys.stdout.buffer.write(b'\n')
                 sys.stdout.flush()
             else:
                 print("".join(output),end='\n',flush=True)
