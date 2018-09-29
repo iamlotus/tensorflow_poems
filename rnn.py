@@ -12,6 +12,7 @@ tf.app.flags.DEFINE_bool('treat_corpus_as_byte', True, 'treat corpus as byte or 
                                                        ' as byte stream, set to False will treat input as text(with '
                                                        'utf encode)')
 tf.app.flags.DEFINE_integer('rnn_size', 128, 'rnn size.')
+tf.app.flags.DEFINE_integer('random_seed', 12345, 'random seed')
 tf.app.flags.DEFINE_integer('num_layers', 2, 'layer num.')
 tf.app.flags.DEFINE_integer('batch_size', 64, 'batch size.')
 tf.app.flags.DEFINE_float('learning_rate', 0.01, 'learning rate.')
@@ -352,6 +353,9 @@ def run_compose():
 def main(_):
     os.environ['CUDA_VISIBLE_DEVICES'] = FLAGS.cuda_visible_devices  # set GPU visibility in multiple-GPU environment
     print_args()
+
+    np.random.seed(FLAGS.random_seed)
+
     if FLAGS.mode=='train':
         run_training()
     elif FLAGS.mode =='compose':
