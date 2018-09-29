@@ -5,6 +5,7 @@ import operator
 import numpy as np
 import collections
 import sys
+import math
 
 tf.app.flags.DEFINE_string('mode', 'train', 'train or compose')
 tf.app.flags.DEFINE_bool('treat_corpus_as_byte', True, 'treat corpus as byte or word, default(True) will treat input'
@@ -14,6 +15,7 @@ tf.app.flags.DEFINE_integer('rnn_size', 128, 'rnn size.')
 tf.app.flags.DEFINE_integer('num_layers', 2, 'layer num.')
 tf.app.flags.DEFINE_integer('batch_size', 64, 'batch size.')
 tf.app.flags.DEFINE_float('learning_rate', 0.01, 'learning rate.')
+tf.app.flags.DEFINE_float('validate_ratio', 0.05, 'how many data are used as validate set.')
 tf.app.flags.DEFINE_string('input_name', 'small_poems', 'name of data(.txt)/model dir/model prefix')
 tf.app.flags.DEFINE_integer('epochs', 50, 'train how many epochs.')
 tf.app.flags.DEFINE_integer('train_sequence_len', 50, 'length of train sequence')
@@ -50,33 +52,68 @@ def process_corpus(file_name):
     word_int_map = dict(zip(words, range(len(words))))
     contents_vector = list(map(word_int_map.get,contents))
 
-    print("content size = %d , %d words totally"%(len(contents_vector),len(word_int_map)))
+    print("## content size %d , %d words totally"%(len(contents_vector),len(word_int_map)))
     return contents_vector, word_int_map, words
 
 
-def generate_batch(content_vector, batch_size,seq_len):
-    x=np.copy(content_vector)
-    y=np.zeros(x.shape,dtype=x.dtype)
-    y[:-1]=x[1:]
-    y[-1]=x[0]
+class DataProvider:
+    def __init__(self,content_vector, batch_size,seq_len):
+        x=np.copy(content_vector)
+        y=np.zeros(x.shape,dtype=x.dtype)
+        y[:-1]=x[1:]
+        y[-1]=x[0]
 
-    n_chunk = len(content_vector) // (batch_size*seq_len)
-    x_batches = []
-    y_batches = []
-    for i in range(n_chunk):
-        start_index = i * batch_size*seq_len
-        end_index = start_index + batch_size*seq_len
-        x_data= x[start_index:end_index].reshape(batch_size,seq_len)
-        y_data = y[start_index:end_index].reshape(batch_size, seq_len)
+        total_batch_num = len(content_vector) // (batch_size*seq_len)
 
-        """
-        x_data             y_data
-        [6,2,4,6,9]       [2,4,6,9,9]
-        [1,4,2,8,5]       [4,2,8,5,5]
-        """
-        x_batches.append(x_data)
-        y_batches.append(y_data)
-    return x_batches, y_batches
+        x_batches = []
+        y_batches = []
+        for i in range(total_batch_num):
+            start_index = i * batch_size*seq_len
+            end_index = start_index + batch_size*seq_len
+            x_data= x[start_index:end_index].reshape(batch_size,seq_len)
+            y_data = y[start_index:end_index].reshape(batch_size, seq_len)
+
+            """
+            x_data             y_data
+            [6,2,4,6,9]       [2,4,6,9,9]
+            [1,4,2,8,5]       [4,2,8,5,5]
+            """
+            x_batches.append(x_data)
+            y_batches.append(y_data)
+
+        x_batches=np.array(x_batches)
+        y_batches=np.array(y_batches)
+
+        validate_size=math.floor(total_batch_num * FLAGS.validate_ratio)
+        train_size=total_batch_num-validate_size
+
+        if validate_size==0:
+            validate_size=1
+            train_size-=1
+
+        if train_size<=0:
+            raise ValueError('total_batch_num %d is too small'%total_batch_num)
+
+
+        validate_indices= np.random.choice(total_batch_num,validate_size,replace=False)
+        train_indices=np.array(list(set(range(total_batch_num))-set(validate_indices)))
+
+        self._x_train,self._x_validate=x_batches[train_indices],x_batches[validate_indices]
+        self._y_train, self._y_validate = y_batches[train_indices], y_batches[validate_indices]
+
+    @property
+    def train_batch_num(self):
+        return len(self._x_train)
+
+    @property
+    def validate_batch_num(self):
+        return len(self._x_validate)
+
+    def train_batch(self, train_batch_id):
+        return self._x_train[train_batch_id], self._y_train[train_batch_id]
+
+    def validate_batch(self, validate_batch_id):
+        return self._x_validate[validate_batch_id], self._y_validate[validate_batch_id]
 
 
 def rnn_model(model, input_data, output_data, vocab_size, rnn_size=128, num_layers=2, batch_size=64,
@@ -130,7 +167,7 @@ def rnn_model(model, input_data, output_data, vocab_size, rnn_size=128, num_laye
         labels = tf.one_hot(tf.reshape(output_data, [-1]), depth=vocab_size)
         # should be [?, vocab_size+1]
 
-        loss = tf.nn.softmax_cross_entropy_with_logits(labels=labels, logits=logits)
+        loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=labels, logits=logits)
         # loss shape should be [?, vocab_size+1]
         total_loss = tf.reduce_mean(loss)
 
@@ -162,12 +199,17 @@ def run_training():
         os.makedirs(log_dir)
 
     poems_vector, word_to_int, vocabularies = process_corpus(corpus_path)
-    batches_inputs, batches_outputs = generate_batch(poems_vector,FLAGS.batch_size, FLAGS.train_sequence_len)
+    data_provider=DataProvider(poems_vector, FLAGS.batch_size, FLAGS.train_sequence_len)
 
     print("## top ten vocabularies: %s" % str(vocabularies[:10]))
     print("## tail ten vocabularies: %s" % str(vocabularies[-10:]))
-    print("## poems_vector[:10]: %s" % poems_vector[:10])
-    print("## poems_vector[-10:]: %s" % poems_vector[-10:])
+    x_train_0,y_train_0=data_provider.train_batch(0)
+    print("## x_train[0][0][:10]: %s" % x_train_0[0][:10])
+    print("## y_train[0][0][:10]: %s" % y_train_0[0][:10])
+
+    x_validate_0, y_validate_0 = data_provider.validate_batch(0)
+    print("## x_validate[0][0][:10]: %s" % x_validate_0[0][:10])
+    print("## y_validate[0][0][:10]: %s" % y_validate_0[0][:10])
 
     input_data = tf.placeholder(tf.int32, [FLAGS.batch_size, None])
     output_targets = tf.placeholder(tf.int32, [FLAGS.batch_size, None])
@@ -181,6 +223,7 @@ def run_training():
     with tf.Session() as sess:
 
         train_writer = tf.summary.FileWriter(os.path.join(log_dir, "train"), sess.graph)
+        validate_writer = tf.summary.FileWriter(os.path.join(log_dir, "validate"), sess.graph)
 
         sess.run(init_op)
 
@@ -192,30 +235,41 @@ def run_training():
             start_epoch += int(checkpoint.split('-')[-1])+1
         print('## start training...',flush=True)
 
-        n_chunk = len(batches_inputs)
-
         try:
             for epoch in range(start_epoch, FLAGS.epochs):
-                n = 0
+                for train_batch_id in range(data_provider.train_batch_num):
+                    global_step = epoch * data_provider.train_batch_num + train_batch_id
+                    if global_step % FLAGS.print_every_steps==0:
+                        x_train, y_train=data_provider.train_batch(train_batch_id)
 
-                for batch in range(n_chunk):
-                    step = epoch * n_chunk+batch
-                    if step % FLAGS.print_every_steps==0:
-                        loss, _, _,train_summary = sess.run([
+                        train_loss, _, _,train_summary = sess.run([
                             end_points['total_loss'],
                             end_points['last_state'],
                             end_points['train_op'],
                             summary_op
-                        ], feed_dict={input_data: batches_inputs[n], output_targets: batches_outputs[n]})
-                        train_writer.add_summary(train_summary,global_step=step)
-                        print('[%s] Step: %d, Epoch: %d, batch: %d, training loss: %.6f' % (time.strftime('%Y-%m-%d %H:%M:%S'),step,epoch, batch, loss), flush=True)
+                        ], feed_dict={input_data: x_train, output_targets: y_train})
+
+                        validate_batch_id=global_step%data_provider.validate_batch_num
+                        x_validate,y_validate=data_provider.validate_batch(validate_batch_id)
+                        validate_loss, _, _, validate_summary = sess.run([
+                            end_points['total_loss'],
+                            end_points['last_state'],
+                            end_points['train_op'],
+                            summary_op
+                        ], feed_dict={input_data: x_validate, output_targets: y_validate})
+
+                        train_writer.add_summary(train_summary,global_step=global_step)
+                        validate_writer.add_summary(validate_summary, global_step=global_step)
+                        print('[%s] Global step: %d, Epoch: %d, Batch: %d, Train loss: %.8f, Validate loss: %.8f' %
+                              (time.strftime('%Y-%m-%d %H:%M:%S'),global_step,epoch, train_batch_id, train_loss,
+                               validate_loss), flush=True)
                     else:
-                         _, _ = sess.run([
+                        x_train, y_train = data_provider.train_batch(train_batch_id)
+                        _, _ = sess.run([
                             end_points['last_state'],
                             end_points['train_op']
-                        ], feed_dict={input_data: batches_inputs[n], output_targets: batches_outputs[n]})
-                    n += 1
-                    step += 1
+                        ], feed_dict={input_data: x_train, output_targets: y_train})
+                    global_step += 1
                 if epoch % FLAGS.save_every_epoch == 0:
                     saver.save(sess, model_file, global_step=epoch)
                     print("[%s] Saving checkpoint for epoch %d"%(time.strftime('%Y-%m-%d %H:%M:%S'), epoch),flush=True)
@@ -296,11 +350,6 @@ def run_compose():
                 sys.stdout.flush()
             else:
                 print("".join(output),end='\n',flush=True)
-
-
-
-
-
 
 def main(_):
     os.environ['CUDA_VISIBLE_DEVICES'] = FLAGS.cuda_visible_devices  # set GPU visibility in multiple-GPU environment
