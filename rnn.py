@@ -235,48 +235,45 @@ def run_training():
             start_epoch += int(checkpoint.split('-')[-1])+1
         print('## start training...',flush=True)
 
-        try:
-            for epoch in range(start_epoch, FLAGS.epochs):
-                for train_batch_id in range(data_provider.train_batch_num):
-                    global_step = epoch * data_provider.train_batch_num + train_batch_id
-                    if global_step % FLAGS.print_every_steps==0:
-                        x_train, y_train=data_provider.train_batch(train_batch_id)
 
-                        train_loss, _, _,train_summary = sess.run([
-                            end_points['total_loss'],
-                            end_points['last_state'],
-                            end_points['train_op'],
-                            summary_op
-                        ], feed_dict={input_data: x_train, output_targets: y_train})
+        for epoch in range(start_epoch, FLAGS.epochs):
+            for train_batch_id in range(data_provider.train_batch_num):
+                global_step = epoch * data_provider.train_batch_num + train_batch_id
+                if global_step % FLAGS.print_every_steps==0:
+                    x_train, y_train=data_provider.train_batch(train_batch_id)
 
-                        validate_batch_id=global_step%data_provider.validate_batch_num
-                        x_validate,y_validate=data_provider.validate_batch(validate_batch_id)
-                        validate_loss, _, _, validate_summary = sess.run([
-                            end_points['total_loss'],
-                            end_points['last_state'],
-                            end_points['train_op'],
-                            summary_op
-                        ], feed_dict={input_data: x_validate, output_targets: y_validate})
+                    train_loss, _, _,train_summary = sess.run([
+                        end_points['total_loss'],
+                        end_points['last_state'],
+                        end_points['train_op'],
+                        summary_op
+                    ], feed_dict={input_data: x_train, output_targets: y_train})
 
-                        train_writer.add_summary(train_summary,global_step=global_step)
-                        validate_writer.add_summary(validate_summary, global_step=global_step)
-                        print('[%s] Global step: %d, Epoch: %d, Batch: %d, Train loss: %.8f, Validate loss: %.8f' %
-                              (time.strftime('%Y-%m-%d %H:%M:%S'),global_step,epoch, train_batch_id, train_loss,
-                               validate_loss), flush=True)
-                    else:
-                        x_train, y_train = data_provider.train_batch(train_batch_id)
-                        _, _ = sess.run([
-                            end_points['last_state'],
-                            end_points['train_op']
-                        ], feed_dict={input_data: x_train, output_targets: y_train})
-                    global_step += 1
-                if epoch % FLAGS.save_every_epoch == 0:
-                    saver.save(sess, model_file, global_step=epoch)
-                    print("[%s] Saving checkpoint for epoch %d"%(time.strftime('%Y-%m-%d %H:%M:%S'), epoch),flush=True)
-        except KeyboardInterrupt:
-            print('## Interrupt manually, try saving checkpoint for now...')
-            saver.save(sess, model_file, global_step=epoch)
-            print('## Last epoch were saved, next time will start from epoch {}.'.format(epoch), flush=True)
+                    validate_batch_id=global_step%data_provider.validate_batch_num
+                    x_validate,y_validate=data_provider.validate_batch(validate_batch_id)
+                    validate_loss, _, _, validate_summary = sess.run([
+                        end_points['total_loss'],
+                        end_points['last_state'],
+                        end_points['train_op'],
+                        summary_op
+                    ], feed_dict={input_data: x_validate, output_targets: y_validate})
+
+                    train_writer.add_summary(train_summary,global_step=global_step)
+                    validate_writer.add_summary(validate_summary, global_step=global_step)
+                    print('[%s] Global step: %d, Epoch: %d, Batch: %d, Train loss: %.8f, Validate loss: %.8f' %
+                          (time.strftime('%Y-%m-%d %H:%M:%S'),global_step,epoch, train_batch_id, train_loss,
+                           validate_loss), flush=True)
+                else:
+                    x_train, y_train = data_provider.train_batch(train_batch_id)
+                    _, _ = sess.run([
+                        end_points['last_state'],
+                        end_points['train_op']
+                    ], feed_dict={input_data: x_train, output_targets: y_train})
+                global_step += 1
+            if epoch % FLAGS.save_every_epoch == 0:
+                saver.save(sess, model_file, global_step=epoch)
+                print("[%s] Saving checkpoint for epoch %d"%(time.strftime('%Y-%m-%d %H:%M:%S'), epoch),flush=True)
+
 
 
 def print_args():
