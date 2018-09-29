@@ -7,12 +7,15 @@ import collections
 import sys
 import math
 
+
+
 tf.app.flags.DEFINE_string('mode', 'train', 'train or compose')
 tf.app.flags.DEFINE_bool('treat_corpus_as_byte', True, 'treat corpus as byte or word, default(True) will treat input'
                                                        ' as byte stream, set to False will treat input as text(with '
                                                        'utf encode)')
-tf.app.flags.DEFINE_integer('rnn_size', 128, 'rnn size.')
 tf.app.flags.DEFINE_integer('random_seed', 12345, 'random seed')
+tf.app.flags.DEFINE_string('cell_type', 'lstm', 'lstm or rnn or gru')
+tf.app.flags.DEFINE_integer('rnn_size', 128, 'rnn size.')
 tf.app.flags.DEFINE_integer('num_layers', 2, 'layer num.')
 tf.app.flags.DEFINE_integer('batch_size', 64, 'batch size.')
 tf.app.flags.DEFINE_float('learning_rate', 0.01, 'learning rate.')
@@ -117,11 +120,11 @@ class DataProvider:
         return self._x_validate[validate_batch_id], self._y_validate[validate_batch_id]
 
 
-def rnn_model(model, input_data, output_data, vocab_size, rnn_size=128, num_layers=2, batch_size=64,
-              learning_rate=0.01):
+def rnn_model(cell_type, input_data, output_data, vocab_size, rnn_size, num_layers, batch_size,
+              learning_rate):
     """
     construct rnn seq2seq model.
-    :param model: model class
+    :param cell_type: cell_type class
     :param input_data: input data placeholder
     :param output_data: output data placeholder
     :param vocab_size:
@@ -133,11 +136,11 @@ def rnn_model(model, input_data, output_data, vocab_size, rnn_size=128, num_laye
     """
     end_points = {}
 
-    if model=='rnn':
+    if cell_type== 'rnn':
         cell_fun=tf.nn.rnn_cell.BasicRNNCell
-    elif model == 'gru':
+    elif cell_type == 'gru':
         cell_fun=tf.nn.rnn_cell.GRUCell
-    elif model == 'lstm':
+    elif cell_type == 'lstm':
         cell_fun =tf.nn.rnn_cell.LSTMCell
 
     cell = cell_fun(rnn_size, state_is_tuple=True)
@@ -215,8 +218,8 @@ def run_training():
     input_data = tf.placeholder(tf.int32, [FLAGS.batch_size, None])
     output_targets = tf.placeholder(tf.int32, [FLAGS.batch_size, None])
 
-    end_points = rnn_model(model='lstm', input_data=input_data, output_data=output_targets, vocab_size=len(
-        vocabularies), rnn_size=128, num_layers=2, batch_size=FLAGS.batch_size, learning_rate=FLAGS.learning_rate)
+    end_points = rnn_model(cell_type=FLAGS.cell_type, input_data=input_data, output_data=output_targets, vocab_size=len(
+        vocabularies), rnn_size=FLAGS.rnn_size, num_layers=FLAGS.num_layers, batch_size=FLAGS.batch_size, learning_rate=FLAGS.learning_rate)
 
     saver = tf.train.Saver(tf.global_variables())
     init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
@@ -307,8 +310,8 @@ def run_compose():
 
     input_data = tf.placeholder(tf.int32, [batch_size, None])
 
-    end_points = rnn_model(model='lstm', input_data=input_data, output_data=None, vocab_size=len(
-        vocabularies), rnn_size=128, num_layers=2, batch_size=64, learning_rate=FLAGS.learning_rate)
+    end_points = rnn_model(cell_type=FLAGS.cell_type, input_data=input_data, output_data=None, vocab_size=len(
+        vocabularies), rnn_size=FLAGS.rnn_size, num_layers=FLAGS.num_layers, batch_size=FLAGS.batch_size, learning_rate=FLAGS.learning_rate)
 
     saver = tf.train.Saver(tf.global_variables())
     init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
