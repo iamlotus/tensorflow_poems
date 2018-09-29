@@ -7,8 +7,6 @@ import collections
 import sys
 import math
 
-
-
 tf.app.flags.DEFINE_string('mode', 'train', 'train or compose')
 tf.app.flags.DEFINE_bool('treat_corpus_as_byte', True, 'treat corpus as byte or word, default(True) will treat input'
                                                        ' as byte stream, set to False will treat input as text(with '
